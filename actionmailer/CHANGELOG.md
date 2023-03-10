@@ -1,7 +1,23 @@
 ## Rails 7.0.8 (September 09, 2023) ##
+*   Added `deliver_enqueued_emails` to `ActionMailer::TestHelper`. This method
+    delivers all enqueued email jobs.
 
-*   No changes.
+*   Added `*_deliver` callbacks to `ActionMailer::Base` that wrap mail message delivery.
 
+    Example:
+
+    ```ruby
+    class EventsMailer < ApplicationMailer
+      after_deliver do
+        User.find_by(email: message.to.first).update(email_provider_id: message.message_id, emailed_at: Time.current)
+      end
+    end
+    ```
+
+    *Ben Sheldon*
+
+*   Added `deliver_enqueued_emails` to `ActionMailer::TestHelper`. This method
+    delivers all enqueued email jobs.
 
 ## Rails 7.0.7.2 (August 22, 2023) ##
 

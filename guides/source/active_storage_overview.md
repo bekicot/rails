@@ -1205,6 +1205,61 @@ class Uploader {
 }
 ```
 
+### Integrating with Libraries or Frameworks
+
+Once you receive a file from the library you have selected, you need to create
+a `DirectUpload` instance and use its "create" method to initiate the upload process,
+adding any required additional headers as necessary. The "create" method also requires
+a callback function to be provided that will be triggered once the upload has finished.
+
+```js
+import { DirectUpload } from "@rails/activestorage"
+
+class Uploader {
+  constructor(file, url, token) {
+    const headers = { 'Authentication': `Bearer ${token}` }
+    // INFO: Sending headers is an optional parameter. If you choose not to send headers,
+    //       authentication will be performed using cookies or session data.
+    this.upload = new DirectUpload(this.file, this.url, this, headers)
+  }
+
+  upload(file) {
+    this.upload.create((error, blob) => {
+      if (error) {
+        // Handle the error
+      } else {
+        // Use the with blob.signed_id as a file reference in next request
+      }
+    })
+  }
+
+  directUploadWillStoreFileWithXHR(request) {
+    request.upload.addEventListener("progress",
+      event => this.directUploadDidProgress(event))
+  }
+
+  directUploadDidProgress(event) {
+    // Use event.loaded and event.total to update the progress bar
+  }
+}
+```
+
+To implement customized authentication, a new controller must be created on
+the Rails application, similar to the following:
+
+```ruby
+class DirectUploadsController < ActiveStorage::DirectUploadsController
+  skip_before_action :verify_authenticity_token
+  before_action :authenticate!
+
+  def authenticate!
+    @token = request.headers['Authorization']&.split&.last
+
+    return head :unauthorized unless valid_token?(@token)
+  end
+end
+```
+
 NOTE: Using [Direct Uploads](#direct-uploads) can sometimes result in a file that uploads, but never attaches to a record. Consider [purging unattached uploads](#purging-unattached-uploads).
 
 Testing
